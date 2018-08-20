@@ -1,5 +1,5 @@
 from flask import Flask, jsonify
-from model import db, Good, All
+from model import db, Good, Order
 from flask_restful import Resource, Api, reqparse, fields, marshal_with, abort, marshal
 
 app = Flask(__name__)
@@ -23,15 +23,21 @@ api = Api(app, catch_all_404s=True, errors=errors)
 
 parser = reqparse.RequestParser()
 parser.add_argument('user_name', required=True)
-parser.add_argument('user_password', required=True)
-parser.add_argument('user_nickname')
-parser.add_argument('user_email', required=True)
+parser.add_argument('good_num', required=True)
+parser.add_argument('good_id', required=True)
 
-resource_full_fields = {
-    'good_id': fields.Integer,
+resource_full_fields1 = {
+    'id': fields.Integer,
     'good_name': fields.String,
     'good_price': fields.Integer,
     'good_pic_url': fields.String
+}
+
+
+resource_full_fields2 = {
+    'user_name': fields.String,
+    'good_num': fields.Integer,
+    'good_id': fields.String,
 }
 
 class Common:
@@ -122,35 +128,68 @@ class GoodList(Resource):
     # @marshal_with(resource_full_fields, envelope='data')
     def get(self):
         # return marshal(User.query.all(), resource_full_fields)
-        return Common.returnTrueJson(Common, marshal(Good.query.all(), resource_full_fields))
+        return Common.returnTrueJson(Common, marshal(Good.query.all(), resource_full_fields1))
+
+    # def post(self):
+    #     args = parser.parse_args()
+    #     user_name = args['user_name']
+    #     user_password = args['user_password']
+    #     user_nickname = args['user_nickname']
+    #     user_email = args['user_email']
+    #     user = User(user_name=user_name, user_password=user_password, user_nickname=user_nickname,
+    #                 user_email=user_email)
+    #     try:
+    #         db.session.add(user)
+    #         db.session.commit()
+    #     except:
+    #         db.session.rollback()
+    #         db.session.flush()
+    #     if (user.user_id is None):
+    #         return Common.returnFalseJson(Common, msg="添加失败")
+    #     else:
+    #         return Users.get(Users, user.user_id)
+
+# class User(Resource):
+#     def get(self, userId):
+#             user = User.query.filter_by(user_id=userId).first()
+#             if (user is None):
+#                 abort(410, msg="找不到数据", data=None, status=0)
+#                 # return Common.returnFalseJson(Common)
+#             else:
+#                 return Common.returnTrueJson(Common, marshal(user, resource_full_fields))
+#
+
+
+class OrderList(Resource):
+    def get(self):
+        # return marshal(User.query.all(), resource_full_fields)
+        return Common.returnTrueJson(Common, marshal(Order.query.all(), resource_full_fields2))
 
     def post(self):
         args = parser.parse_args()
         user_name = args['user_name']
-        user_password = args['user_password']
-        user_nickname = args['user_nickname']
-        user_email = args['user_email']
-        user = User(user_name=user_name, user_password=user_password, user_nickname=user_nickname,
-                    user_email=user_email)
+        good_num = args['good_num']
+        good_id = args['good_id']
+        order = Order(user_name=user_name, good_num=good_num, good_id=good_id)
         try:
-            db.session.add(user)
+            db.session.add(order)
             db.session.commit()
         except:
             db.session.rollback()
             db.session.flush()
-        if (user.user_id is None):
+        if (order.id is None):
+            print('-' * 20)
             return Common.returnFalseJson(Common, msg="添加失败")
         else:
-            return Users.get(Users, user.user_id)
-
-
+            print('+'*20)
+            return Order.get(Order, order.id)
 
 api.add_resource(Hello, '/', '/hello')
 # api.add_resource(UserList, '/users')
 # api.add_resource(Users, '/users/<int:userId>')
-
-
-api.add_resource(GoodList, '/good')
+api.add_resource(GoodList, '/goods')
+api.add_resource(OrderList, '/orders')
 
 if __name__ == '__main__':
     app.run(debug=app.config['DEBUG'])
+
