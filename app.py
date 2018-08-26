@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from model import db, Good, Order
 from flask_restful import Resource, Api, reqparse, fields, marshal_with, abort, marshal
 
@@ -21,10 +21,10 @@ errors = {
 
 api = Api(app, catch_all_404s=True, errors=errors)
 
-parser = reqparse.RequestParser()
-parser.add_argument('user_name', required=True)
-parser.add_argument('good_num', required=True)
-parser.add_argument('good_id', required=True)
+# parser = reqparse.RequestParser()
+# parser.add_argument('user_name', required=True)
+# parser.add_argument('good_num', required=True)
+# parser.add_argument('good_id', required=True)
 
 resource_full_fields1 = {
     'id': fields.Integer,
@@ -36,8 +36,15 @@ resource_full_fields1 = {
 
 resource_full_fields2 = {
     'user_name': fields.String,
-    'good_num': fields.Integer,
+    'num': fields.Integer,
     'good_id': fields.String,
+}
+
+resource_full_fields3 = {
+    'user_name': fields.String,
+    'num': fields.Integer,
+    'good_id': fields.String,
+    'time': fields.String,
 }
 
 class Common:
@@ -159,6 +166,10 @@ class GoodList(Resource):
 #                 return Common.returnTrueJson(Common, marshal(user, resource_full_fields))
 #
 
+parser = reqparse.RequestParser()
+parser.add_argument('user_name')
+parser.add_argument('num')
+parser.add_argument('good_id')
 
 class OrderList(Resource):
     def get(self):
@@ -168,27 +179,39 @@ class OrderList(Resource):
     def post(self):
         args = parser.parse_args()
         user_name = args['user_name']
-        good_num = args['good_num']
         good_id = args['good_id']
-        order = Order(user_name=user_name, good_num=good_num, good_id=good_id)
+        num = args['num']
+        order = Order(user_name=user_name, num=num, good_id=good_id)
         try:
             db.session.add(order)
             db.session.commit()
+            return Common.returnTrueJson(Common, marshal(Order.query.all()[-1], resource_full_fields2))
         except:
             db.session.rollback()
             db.session.flush()
-        if (order.id is None):
-            print('-' * 20)
             return Common.returnFalseJson(Common, msg="添加失败")
+
+class Myorder(Resource):
+    def get(self,user_Name):
+        myorder = Order.query.filter(Order.user_name==user_Name).all()
+        if (myorder is None):
+            abort(410, msg="找不到数据", data=None, status=0)
+                # return Common.returnFalseJson(Common)
         else:
-            print('+'*20)
-            return Order.get(Order, order.id)
+            return Common.returnTrueJson(Common, marshal(myorder, resource_full_fields3))
+
+
+
+
+# POST格式：curl -d "user_name=123&num=12&good_id=3" "127.0.0.1:5000/orders"
 
 api.add_resource(Hello, '/', '/hello')
 # api.add_resource(UserList, '/users')
 # api.add_resource(Users, '/users/<int:userId>')
 api.add_resource(GoodList, '/goods')
 api.add_resource(OrderList, '/orders')
+api.add_resource(Myorder, '/orders/<user_Name>')
+
 
 if __name__ == '__main__':
     app.run(debug=app.config['DEBUG'])

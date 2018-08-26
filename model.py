@@ -16,7 +16,7 @@ class Good(db.Model):
 class Order(db.Model):
     __tablename__ = 'order'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_name = db.Column(db.String(20), nullable=False, unique=True)
+    user_name = db.Column(db.String(20), nullable=False)
     num = db.Column(db.Integer, nullable=False)
     good_id = db.Column(db.Integer, db.ForeignKey('good.id'))
     time = db.Column(db.Date, default=datetime.date.today())
